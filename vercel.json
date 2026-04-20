@@ -1,8 +1,8 @@
 {
-  "crons": [
+  "rewrites": [
     {
-      "path": "/api/trigger-bot",
-      "schedule": "0 0 * * *"
+      "source": "/",
+      "destination": "/api/open"
     }
   ]
 }
