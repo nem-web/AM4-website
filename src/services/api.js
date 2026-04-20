@@ -1,5 +1,6 @@
 import {
   activeRoutes,
+  aircraftPerformance,
   companyData,
   financialSummary24h,
   fleetInventory,
@@ -31,4 +32,9 @@ export async function getFleetInventory() {
 export async function getActiveRoutes() {
   await delay();
   return activeRoutes;
+}
+
+export async function getAircraftPerformance() {
+  await delay();
+  return aircraftPerformance;
 }

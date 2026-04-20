@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   getActiveRoutes,
+  getAircraftPerformance,
   getCompanyProfile,
   getFinancialSummary,
   getFleetInventory,
@@ -14,20 +15,22 @@ export function useAirlineData() {
     finance: null,
     transactions: [],
     fleet: [],
-    routes: []
+    routes: [],
+    aircraftPerformance: []
   });
 
   useEffect(() => {
     async function load() {
-      const [company, finance, transactions, fleet, routes] = await Promise.all([
+      const [company, finance, transactions, fleet, routes, aircraftPerformance] = await Promise.all([
         getCompanyProfile(),
         getFinancialSummary(),
         getRecentTransactions(),
         getFleetInventory(),
-        getActiveRoutes()
+        getActiveRoutes(),
+        getAircraftPerformance()
       ]);
 
-      setState({ loading: false, company, finance, transactions, fleet, routes });
+      setState({ loading: false, company, finance, transactions, fleet, routes, aircraftPerformance });
     }
 
     load();

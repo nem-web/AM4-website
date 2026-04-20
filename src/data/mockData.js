@@ -50,10 +50,19 @@ export const fleetInventory = [
 ];
 
 export const activeRoutes = [
-  { id: "AI-0012", route: "OAHR - VIDP", aircraft: "VT-013-2 (ATR 72-500)" },
-  { id: "AI-0034", route: "VIDP - VIHR", aircraft: "VT-047 (DC-4)" },
-  { id: "AI-0013", route: "UAAA - VIDP", aircraft: "VT-008 (DC-9-10)" },
-  { id: "AI-exmouth", route: "VIDP - YPLM", aircraft: "VT-022 (B737-800)" },
-  { id: "AI-munich", route: "EDDM - VIDP", aircraft: "VT-032 (B737-800)" },
-  { id: "AI-0027", route: "VIDP - LEVX", aircraft: "VT-040 (B737-900)" }
+  { id: "AI-0012", from: "OAHR", to: "VIDP", aircraft: "VT-013-2 (ATR 72-500)", timeLeft: "0h 42m", progress: 81 },
+  { id: "AI-0034", from: "VIDP", to: "VIHR", aircraft: "VT-047 (DC-4)", timeLeft: "1h 09m", progress: 63 },
+  { id: "AI-0013", from: "UAAA", to: "VIDP", aircraft: "VT-008 (DC-9-10)", timeLeft: "2h 35m", progress: 47 },
+  { id: "AI-exmouth", from: "VIDP", to: "YPLM", aircraft: "VT-022 (B737-800)", timeLeft: "5h 18m", progress: 22 },
+  { id: "AI-munich", from: "EDDM", to: "VIDP", aircraft: "VT-032 (B737-800)", timeLeft: "4h 03m", progress: 39 },
+  { id: "AI-0027", from: "VIDP", to: "LEVX", aircraft: "VT-040 (B737-900)", timeLeft: "3h 27m", progress: 52 }
+];
+
+export const aircraftPerformance = [
+  { aircraft: "VT-022 (B737-800)", type: "B737-800", lifetimeEarnings: 15420320, last24hEarnings: 528900, flights24h: 6, avgLoadFactor: 84 },
+  { aircraft: "VT-032 (B737-800)", type: "B737-800", lifetimeEarnings: 14988420, last24hEarnings: 502110, flights24h: 5, avgLoadFactor: 82 },
+  { aircraft: "VT-040 (B737-900)", type: "B737-900", lifetimeEarnings: 11877210, last24hEarnings: 431780, flights24h: 4, avgLoadFactor: 79 },
+  { aircraft: "VT-008 (DC-9-10)", type: "DC-9-10", lifetimeEarnings: 6412240, last24hEarnings: 201350, flights24h: 3, avgLoadFactor: 73 },
+  { aircraft: "VT-047 (DC-4)", type: "DC-4", lifetimeEarnings: 4789320, last24hEarnings: 169880, flights24h: 3, avgLoadFactor: 70 },
+  { aircraft: "VT-013-2 (ATR 72-500)", type: "ATR 72-500", lifetimeEarnings: 3921100, last24hEarnings: 134090, flights24h: 4, avgLoadFactor: 77 }
 ];

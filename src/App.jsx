@@ -13,15 +13,15 @@ function Loader() {
 
 export default function App() {
   const [activeView, setActiveView] = useState("overview");
-  const { loading, company, finance, transactions, fleet, routes, incomeTrend24h } = useAirlineData();
+  const { loading, company, finance, transactions, fleet, routes, aircraftPerformance, incomeTrend24h } = useAirlineData();
 
   const viewNode = useMemo(() => {
     if (!company || !finance) return null;
     if (activeView === "finances") return <FinanceView finance={finance} transactions={transactions} />;
-    if (activeView === "fleet") return <FleetView fleet={fleet} />;
-    if (activeView === "routes") return <RoutesView routes={routes} />;
+    if (activeView === "fleet") return <FleetView fleet={fleet} aircraftPerformance={aircraftPerformance} />;
+    if (activeView === "routes") return <RoutesView routes={routes} aircraftPerformance={aircraftPerformance} />;
     return <OverviewView company={company} finance={finance} incomeTrend24h={incomeTrend24h} />;
-  }, [activeView, company, finance, fleet, incomeTrend24h, routes, transactions]);
+  }, [activeView, aircraftPerformance, company, finance, fleet, incomeTrend24h, routes, transactions]);
 
   if (loading) return <Loader />;
 

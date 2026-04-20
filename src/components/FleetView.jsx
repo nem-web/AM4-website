@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const manufacturerColors = ["#0ea5e9", "#22c55e", "#a855f7", "#f59e0b", "#ef4444"];
 
-export default function FleetView({ fleet }) {
+const money = (n) => `$${Number(n).toLocaleString()}`;
+
+export default function FleetView({ fleet, aircraftPerformance }) {
   const [roleFilter, setRoleFilter] = useState("all");
 
   const filtered = useMemo(
@@ -61,19 +63,65 @@ export default function FleetView({ fleet }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="card p-4">
+          <h3 className="mb-4 text-lg font-semibold">Fleet Distribution by Manufacturer</h3>
+          <div className="h-72">
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie data={byManufacturer} dataKey="value" nameKey="name" outerRadius={110} innerRadius={60}>
+                  {byManufacturer.map((_, i) => (
+                    <Cell key={i} fill={manufacturerColors[i % manufacturerColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <h3 className="mb-4 text-lg font-semibold">Top Aircraft Earnings (24h)</h3>
+          <div className="h-72">
+            <ResponsiveContainer>
+              <BarChart data={aircraftPerformance}>
+                <XAxis dataKey="type" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(v) => money(v)} />
+                <Bar dataKey="last24hEarnings" fill="#22c55e" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       <div className="card p-4">
-        <h3 className="mb-4 text-lg font-semibold">Fleet Distribution by Manufacturer</h3>
-        <div className="h-72">
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie data={byManufacturer} dataKey="value" nameKey="name" outerRadius={110} innerRadius={60}>
-                {byManufacturer.map((_, i) => (
-                  <Cell key={i} fill={manufacturerColors[i % manufacturerColors.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+        <h3 className="mb-4 text-lg font-semibold">Aircraft Performance Ledger</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="text-left text-slate-400">
+              <tr>
+                <th className="py-2">Aircraft</th>
+                <th>Type</th>
+                <th>Lifetime Earnings</th>
+                <th>Last 24h Earnings</th>
+                <th>Flights (24h)</th>
+                <th>Avg Load Factor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {aircraftPerformance.map((item) => (
+                <tr key={item.aircraft} className="border-t border-slate-800">
+                  <td className="py-2 font-medium">{item.aircraft}</td>
+                  <td>{item.type}</td>
+                  <td className="text-sky-300">{money(item.lifetimeEarnings)}</td>
+                  <td className="text-emerald-300">{money(item.last24hEarnings)}</td>
+                  <td>{item.flights24h}</td>
+                  <td>{item.avgLoadFactor}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
