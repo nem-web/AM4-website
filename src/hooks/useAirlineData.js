@@ -11,6 +11,7 @@ import {
 export function useAirlineData() {
   const [state, setState] = useState({
     loading: true,
+    error: "",
     company: null,
     finance: null,
     transactions: [],
@@ -21,16 +22,24 @@ export function useAirlineData() {
 
   useEffect(() => {
     async function load() {
-      const [company, finance, transactions, fleet, routes, aircraftPerformance] = await Promise.all([
-        getCompanyProfile(),
-        getFinancialSummary(),
-        getRecentTransactions(),
-        getFleetInventory(),
-        getActiveRoutes(),
-        getAircraftPerformance()
-      ]);
+      try {
+        const [company, finance, transactions, fleet, routes, aircraftPerformance] = await Promise.all([
+          getCompanyProfile(),
+          getFinancialSummary(),
+          getRecentTransactions(),
+          getFleetInventory(),
+          getActiveRoutes(),
+          getAircraftPerformance()
+        ]);
 
-      setState({ loading: false, company, finance, transactions, fleet, routes, aircraftPerformance });
+        setState({ loading: false, error: "", company, finance, transactions, fleet, routes, aircraftPerformance });
+      } catch (err) {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: err.message || "Failed to load AM4 data. Ensure your session is active."
+        }));
+      }
     }
 
     load();
