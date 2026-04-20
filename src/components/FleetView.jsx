@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const manufacturerColors = ["#0ea5e9", "#22c55e", "#a855f7", "#f59e0b", "#ef4444"];

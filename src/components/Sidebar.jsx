@@ -1,3 +1,4 @@
+import React from "react";
 import { BarChart3, CircleDollarSign, Plane, Route } from "lucide-react";
 
 const navItems = [

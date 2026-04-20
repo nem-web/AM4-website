@@ -1,3 +1,5 @@
+import React from "react";
+
 export default function RoutesView({ routes }) {
   return (
     <section className="card p-4">

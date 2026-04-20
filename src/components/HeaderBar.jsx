@@ -1,3 +1,5 @@
+import React from "react";
+
 const currency = (n) => `$${Number(n).toLocaleString()}`;
 
 export default function HeaderBar({ company, balance }) {

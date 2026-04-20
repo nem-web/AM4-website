@@ -1,3 +1,5 @@
+import React from "react";
+
 export default function MetricCard({ label, value, tone = "default" }) {
   const toneStyles = {
     default: "text-slate-200",
