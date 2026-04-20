@@ -70,6 +70,24 @@ async function fetchPage(path, cookieHeader) {
   return res.text();
 }
 
+async function fetchWithFallback(paths, cookieHeader, { critical = false } = {}) {
+  let lastError = null;
+
+  for (const path of paths) {
+    try {
+      return await fetchPage(path, cookieHeader);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (critical) {
+    throw lastError;
+  }
+
+  return "";
+}
+
 function parseRouteTimers($) {
   const timers = new Map();
   $("script").each((_, script) => {
@@ -224,16 +242,19 @@ export async function fetchDashboardData() {
   const cookieHeader = await loginAndBuildCookieHeader();
 
   const [companyHtml, financeHtml, summaryHtml, transactionsHtml, fleetHtml, routesHtml] = await Promise.all([
-    fetchPage("/company_main.php", cookieHeader),
-    fetchPage("/finances.php", cookieHeader),
-    fetchPage("/transactions.php?mode=summary", cookieHeader),
-    fetchPage("/transactions.php", cookieHeader),
-    fetchPage("/fleet.php", cookieHeader),
-    fetchPage("/routes_main.php", cookieHeader)
+    fetchWithFallback(["/company_main.php"], cookieHeader, { critical: true }),
+    fetchWithFallback(["/finances.php"], cookieHeader, { critical: true }),
+    fetchWithFallback(["/transactions.php?mode=summary"], cookieHeader, { critical: true }),
+    fetchWithFallback(
+      ["/transactions.php", "/transactions.php?mode=summary", "/transactions.php?mode=all"],
+      cookieHeader
+    ),
+    fetchWithFallback(["/fleet.php"], cookieHeader, { critical: true }),
+    fetchWithFallback(["/routes_main.php"], cookieHeader, { critical: true })
   ]);
 
   const routes = parseRoutes(routesHtml);
-  const transactions = parseTransactions(transactionsHtml);
+  const transactions = parseTransactions(transactionsHtml || summaryHtml);
 
   return {
     company: parseCompanyProfile(companyHtml),
