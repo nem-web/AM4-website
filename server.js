@@ -17,10 +17,9 @@ app.get("/trigger-bot", (req, res) => {
   }
 
   const authHeader = req.headers.authorization;
-  const bearerPrefix = "bearer ";
-  const normalizedAuth = typeof authHeader === "string" ? authHeader.toLowerCase() : "";
-  const headerToken = normalizedAuth.startsWith(bearerPrefix)
-    ? authHeader.slice(bearerPrefix.length).trim()
+  const headerToken =
+    typeof authHeader === "string" && authHeader.slice(0, 7).toLowerCase() === "bearer "
+      ? authHeader.slice(7).trim()
     : null;
   const queryToken = req.query.auth;
 
