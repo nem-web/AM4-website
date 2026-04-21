@@ -128,7 +128,7 @@ function parseRouteTimers($) {
   const timers = new Map();
   $("script").each((_, script) => {
     const text = $(script).html() || "";
-    [...text.matchAll(/timer\(['"](.+?)['"],\s*(\d+)\)/g)].forEach((match) => {
+    [...text.matchAll(/timer\(['"]([^'"]+)['"],\s*(\d+)\)/g)].forEach((match) => {
       timers.set(match[1], Number(match[2]));
     });
   });
@@ -173,9 +173,7 @@ function parseFinancialSummary(financeHtml, summaryHtml) {
     Math.abs(findByLabel(["24h income", "income", "ticket income", "revenue"])) || summaryCurrencies[0] || 0;
   const expenses =
     Math.abs(findByLabel(["24h expenses", "expenses", "expense", "cost"])) || summaryCurrencies[1] || 0;
-  const balance =
-    Math.abs(findByLabel(["current balance", "balance", "cash"])) ||
-    parseNumber(financeText.match(/\$\s?([\d,]+)/)?.[1] || "0");
+  const balance = findByLabel(["current balance", "balance", "cash"]) || parseCurrency(financeText.match(/-?\$\s?[\d,]+/)?.[0] || "0");
   const netResult =
     findByLabel(["net result", "net profit", "profit", "net"]) || summaryCurrencies[2] || income - expenses;
 
@@ -216,7 +214,7 @@ function parseTransactions(html) {
       const normalized = parseCurrencyToken(amountToken);
       if (!normalized) return null;
 
-      const description = cells.slice(1, -1).join(" ").trim() || cells[1] || text.replace(amountToken, "").trim();
+      const description = cells.slice(1, -1).join(" ").trim() || text.replace(amountToken, "").trim();
       const time = cells[0];
 
       return {
@@ -252,8 +250,8 @@ function parseFleet(html) {
         cells.find(
           (cell) =>
             /[a-z]/i.test(cell) &&
-            !/cargo|vip|pax|passenger|manufacturer|owned|in service|active/i.test(cell) &&
-            parseNumber(cell) === 0
+            !/cargo|vip|pax|passenger|manufacturer|owned|in\s+service|active/i.test(cell) &&
+            !/^\d[\d,]*$/.test(cell)
         ) || "";
       if (!type) return null;
 
@@ -370,19 +368,15 @@ export async function fetchDashboardData() {
   );
   const company = parseCompanyProfile(companyHtml);
 
-  if (fleet.length > 0) {
-    company.fleetCount = fleet.reduce((sum, aircraft) => sum + aircraft.count, 0);
-  }
-  if (routes.length > 0) {
-    company.routesCount = routes.length;
-  }
-  if (income24hFromTransactions > 0) {
+  company.fleetCount = fleet.reduce((sum, aircraft) => sum + aircraft.count, 0) || company.fleetCount;
+  company.routesCount = routes.length || company.routesCount;
+  finance.last24hIncome = income24hFromTransactions || finance.income;
+  if (!finance.income && income24hFromTransactions > 0) {
     finance.income = income24hFromTransactions;
   }
-  if (expenses24hFromTransactions > 0) {
+  if (!finance.expenses && expenses24hFromTransactions > 0) {
     finance.expenses = expenses24hFromTransactions;
   }
-  finance.last24hIncome = income24hFromTransactions || finance.income;
   finance.netResult = finance.income - finance.expenses;
 
   return {
