@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 
 const AM4_ORIGIN = "https://airlinemanager.com";
+const MAX_TRANSACTIONS = 24;
 
 function parseNumber(value = "") {
   const cleaned = String(value).replace(/[^\d]/g, "");
@@ -128,8 +129,8 @@ function parseRouteTimers($) {
   const timers = new Map();
   $("script").each((_, script) => {
     const text = $(script).html() || "";
-    [...text.matchAll(/timer\(['"]([^'"]+)['"],\s*(\d+)\)/g)].forEach((match) => {
-      timers.set(match[1], Number(match[2]));
+    [...text.matchAll(/timer\((['"])([^'"]+)\1,\s*(\d+)\)/g)].forEach((match) => {
+      timers.set(match[2], Number(match[3]));
     });
   });
   return timers;
@@ -225,7 +226,7 @@ function parseTransactions(html) {
       };
     })
     .filter(Boolean)
-    .slice(0, 24);
+    .slice(0, MAX_TRANSACTIONS);
 }
 
 function parseFleet(html) {
@@ -377,7 +378,7 @@ export async function fetchDashboardData() {
   if (!finance.expenses && expenses24hFromTransactions > 0) {
     finance.expenses = expenses24hFromTransactions;
   }
-  finance.netResult = finance.income - finance.expenses;
+  finance.netResult = finance.netResult || finance.income - finance.expenses;
 
   return {
     company,
