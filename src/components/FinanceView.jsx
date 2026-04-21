@@ -19,8 +19,8 @@ export default function FinanceView({ finance, transactions }) {
   ];
 
   const projectionData = [
-    { label: "Per Day", value: finance.netResult },
-    { label: "Per Week", value: finance.netResult * 7 }
+    { label: "Per Day", value: finance.last24hIncome || finance.income },
+    { label: "Per Week", value: (finance.last24hIncome || finance.income) * 7 }
   ];
 
   const filteredTransactions = useMemo(() => {
