@@ -12,7 +12,12 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/trigger-bot", (req, res) => {
-  if (!CRON_SECRET || req.query.auth !== CRON_SECRET) {
+  const authHeader = req.headers.authorization;
+  const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
+  const headerToken = bearerMatch?.[1];
+  const queryToken = req.query.auth;
+
+  if (!CRON_SECRET || (queryToken !== CRON_SECRET && headerToken !== CRON_SECRET)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
