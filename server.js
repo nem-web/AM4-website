@@ -12,12 +12,19 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/trigger-bot", (req, res) => {
+  if (!CRON_SECRET) {
+    return res.status(500).json({ error: "Server misconfigured" });
+  }
+
   const authHeader = req.headers.authorization;
-  const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
-  const headerToken = bearerMatch?.[1];
+  const bearerPrefix = "bearer ";
+  const normalizedAuth = typeof authHeader === "string" ? authHeader.toLowerCase() : "";
+  const headerToken = normalizedAuth.startsWith(bearerPrefix)
+    ? authHeader.slice(bearerPrefix.length).trim()
+    : null;
   const queryToken = req.query.auth;
 
-  if (!CRON_SECRET || (queryToken !== CRON_SECRET && headerToken !== CRON_SECRET)) {
+  if (queryToken !== CRON_SECRET && headerToken !== CRON_SECRET) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
