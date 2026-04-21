@@ -93,17 +93,23 @@ export default function FinanceView({ finance, transactions }) {
           </div>
 
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-            {filteredTransactions.map((txn, index) => (
-              <div key={`${txn.time}-${index}`} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                <div>
-                  <p className="font-medium">{txn.desc}</p>
-                  <p className="text-xs text-slate-400">{txn.time}</p>
+            {filteredTransactions.length === 0 ? (
+              <p className="rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-sm text-slate-400">
+                No transactions found for this filter yet.
+              </p>
+            ) : (
+              filteredTransactions.map((txn, index) => (
+                <div key={`${txn.time}-${index}`} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                  <div>
+                    <p className="font-medium">{txn.desc}</p>
+                    <p className="text-xs text-slate-400">{txn.time}</p>
+                  </div>
+                  <p className={`font-semibold ${txn.amount >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                    {txn.amount >= 0 ? "+" : "-"}{money(txn.amount)}
+                  </p>
                 </div>
-                <p className={`font-semibold ${txn.amount >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
-                  {txn.amount >= 0 ? "+" : "-"}{money(txn.amount)}
-                </p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
