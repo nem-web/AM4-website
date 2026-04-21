@@ -12,7 +12,7 @@ export async function connectDB() {
   const dbName = process.env.MONGODB_DB || DEFAULT_DB_NAME;
 
   if (!mongoUri) {
-    throw new Error("Missing MONGODB_URI. Set it in your Vercel environment variables.");
+    throw new Error("Missing MONGODB_URI. Set it in your cloud environment variables.");
   }
 
   await mongoose.connect(mongoUri, {
