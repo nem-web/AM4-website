@@ -40,6 +40,9 @@ export default function FleetView({ fleet, aircraftPerformance }) {
         </div>
 
         <div className="overflow-x-auto">
+          {filtered.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">No fleet data available.</p>
+          ) : (
           <table className="min-w-full text-sm">
             <thead className="text-left text-slate-400">
               <tr>
@@ -60,6 +63,7 @@ export default function FleetView({ fleet, aircraftPerformance }) {
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
 

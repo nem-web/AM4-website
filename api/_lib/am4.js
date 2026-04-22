@@ -128,8 +128,13 @@ function parseFinancialSummary(financeHtml, summaryHtml) {
   const summaryText = cheerio.load(summaryHtml).text();
   const currencies = [...summaryText.matchAll(/\$\s?([\d,]+)/g)].map((m) => parseNumber(m[1]));
 
-  const income = currencies[0] || 0;
-  const expenses = currencies[1] || 0;
+  // Try label-based extraction first (robust against page reorders)
+  const incomeLabel = summaryText.match(/income[^$\n]{0,30}\$\s?([\d,]+)/i);
+  const expenseLabel = summaryText.match(/expense[^$\n]{0,30}\$\s?([\d,]+)/i);
+
+  // AM4 summary page shows expenses before income positionally, so currencies[0]=expenses, [1]=income
+  const income = incomeLabel ? parseNumber(incomeLabel[1]) : currencies[1] || 0;
+  const expenses = expenseLabel ? parseNumber(expenseLabel[1]) : currencies[0] || 0;
 
   return {
     balance: parseNumber(financeText.match(/\$\s?([\d,]+)/)?.[1] || "0"),
@@ -148,25 +153,42 @@ function parseFinancialSummary(financeHtml, summaryHtml) {
 
 function parseTransactions(html) {
   const $ = cheerio.load(html);
-  const rows = $("tr").slice(0, 16).toArray();
+  const rows = $("tr").slice(0, 20).toArray();
 
   return rows
     .map((row) => {
-      const text = $(row).text().replace(/\s+/g, " ").trim();
-      const amountMatch = text.match(/([+-]?\$\s?[\d,]+)/);
-      if (!amountMatch) return null;
-
-      const amount = parseCurrency(amountMatch[1]);
-      const normalized = amountMatch[1].startsWith("-") ? -Math.abs(amount) : amount;
       const cells = $(row)
         .find("td")
         .toArray()
         .map((cell) => $(cell).text().trim());
 
+      if (cells.length < 2) return null;
+
+      const text = cells.join(" ");
+
+      // Try $-prefixed amount first
+      const dollarMatch = text.match(/([+-]?\$\s?[\d,]+)/);
+      let normalized;
+
+      if (dollarMatch) {
+        const amount = parseCurrency(dollarMatch[1]);
+        normalized = dollarMatch[1].startsWith("-") ? -Math.abs(amount) : amount;
+      } else {
+        // Fallback: last cell that looks like a plain number (with optional sign)
+        const lastCell = cells[cells.length - 1].replace(/,/g, "");
+        const numMatch = lastCell.match(/^([+-]?\d+)$/);
+        if (!numMatch) return null;
+        const num = Number(numMatch[1]);
+        if (!num) return null;
+        normalized = num;
+      }
+
+      if (!normalized) return null;
+
       return {
         time: cells[0] || "recent",
         type: normalized >= 0 ? "income" : "expense",
-        desc: cells[1] || text.replace(amountMatch[1], "").trim(),
+        desc: cells[1] || text.replace(dollarMatch?.[1] || "", "").trim(),
         amount: normalized
       };
     })
@@ -183,7 +205,7 @@ function parseFleet(html) {
         .toArray()
         .map((cell) => $(cell).text().trim());
 
-      if (cells.length < 3) return null;
+      if (cells.length < 2) return null;
       const [type, countCell, maybeRole] = cells;
       const count = parseNumber(countCell);
       if (!type || !count) return null;
@@ -192,7 +214,7 @@ function parseFleet(html) {
         type,
         count,
         manufacturer: type.startsWith("A") ? "Airbus" : type.startsWith("B") ? "Boeing" : "Other",
-        role: /cargo/i.test(maybeRole) ? "Cargo" : /vip/i.test(maybeRole) ? "VIP" : "PAX"
+        role: /cargo/i.test(maybeRole || "") ? "Cargo" : /vip/i.test(maybeRole || "") ? "VIP" : "PAX"
       };
     })
     .filter(Boolean);
@@ -202,25 +224,53 @@ function parseRoutes(html) {
   const $ = cheerio.load(html);
   const timers = parseRouteTimers($);
 
-  return $("[id^=routeMainList]")
+  // Primary: elements with routeMainList ids
+  const routeMainNodes = $("[id^=routeMainList]").toArray();
+
+  if (routeMainNodes.length > 0) {
+    return routeMainNodes
+      .map((node, index) => {
+        const row = $(node).closest("tr").text().replace(/\s+/g, " ").trim();
+        const routeMatch = row.match(/([A-Z]{4})\s*-\s*([A-Z]{4})/);
+        const aircraft = row.match(/\(([^)]+)\)/)?.[0] || row.slice(0, 42);
+        const id = ($(node).attr("id") || `ROUTE-${index + 1}`).replace(/[^\w-]/g, "");
+        const secs = timers.get($(node).attr("id")) || 0;
+
+        return {
+          id,
+          from: routeMatch?.[1] || "----",
+          to: routeMatch?.[2] || "----",
+          aircraft,
+          timeLeft: formatTime(secs),
+          progress: secs > 0 ? Math.max(5, 100 - Math.round((secs / (secs + 3600)) * 100)) : 100
+        };
+      })
+      .filter((route) => route.from !== "----" || route.to !== "----");
+  }
+
+  // Fallback: scan all table rows for IATA route patterns (4-letter codes separated by dash)
+  return $("tr")
     .toArray()
-    .map((node, index) => {
-      const row = $(node).closest("tr").text().replace(/\s+/g, " ").trim();
-      const routeMatch = row.match(/([A-Z]{4})\s*-\s*([A-Z]{4})/);
-      const aircraft = row.match(/\(([^)]+)\)/)?.[0] || row.slice(0, 42);
-      const id = ($(node).attr("id") || `ROUTE-${index + 1}`).replace(/[^\w-]/g, "");
-      const secs = timers.get($(node).attr("id")) || 0;
+    .map((row, index) => {
+      const text = $(row).text().replace(/\s+/g, " ").trim();
+      const routeMatch = text.match(/\b([A-Z]{4})\s*[-–]\s*([A-Z]{4})\b/);
+      if (!routeMatch) return null;
+
+      const aircraft = text.match(/\(([^)]+)\)/)?.[0] || "";
+      const rowId = $(row).attr("id") || `ROUTE-${index + 1}`;
+      const id = rowId.replace(/[^\w-]/g, "");
+      const secs = timers.get($(row).attr("id")) || 0;
 
       return {
         id,
-        from: routeMatch?.[1] || "----",
-        to: routeMatch?.[2] || "----",
+        from: routeMatch[1],
+        to: routeMatch[2],
         aircraft,
         timeLeft: formatTime(secs),
         progress: secs > 0 ? Math.max(5, 100 - Math.round((secs / (secs + 3600)) * 100)) : 100
       };
     })
-    .filter((route) => route.from !== "----" || route.to !== "----");
+    .filter(Boolean);
 }
 
 function deriveAircraftPerformance(routes, transactions) {
