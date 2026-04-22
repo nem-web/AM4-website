@@ -141,7 +141,7 @@ function parseFinancialSummary(financeHtml, summaryHtml) {
     paxPoints: parseNumber(financeText.match(/Pax Points\D+([\d,]+)/i)?.[1] || "0"),
     income,
     expenses,
-    netResult: currencies[2] || income - expenses,
+    netResult,
     breakdown: {
       fuelExpenses: currencies[3] || 0,
       routeFees: currencies[4] || 0,
@@ -197,7 +197,7 @@ function parseTransactions(html) {
 
 function parseFleet(html) {
   const $ = cheerio.load(html);
-  return $("tr")
+  const rows = $("tr")
     .toArray()
     .map((row) => {
       const cells = $(row)
@@ -215,6 +215,24 @@ function parseFleet(html) {
         count,
         manufacturer: type.startsWith("A") ? "Airbus" : type.startsWith("B") ? "Boeing" : "Other",
         role: /cargo/i.test(maybeRole || "") ? "Cargo" : /vip/i.test(maybeRole || "") ? "VIP" : "PAX"
+      };
+    })
+    .filter(Boolean);
+
+  if (rows.length > 0) return rows;
+
+  // Fallback for card/list based fleet layouts.
+  const rawText = $.text().replace(/\s+/g, " ");
+  return [...rawText.matchAll(/([A-Za-z0-9\- ]{3,}?)\s+[xX]\s*(\d{1,3}(?:,\d{3})*)/g)]
+    .map((match) => {
+      const type = match[1].trim();
+      const count = parseNumber(match[2]);
+      if (!type || !count) return null;
+      return {
+        type,
+        count,
+        manufacturer: type.startsWith("A") ? "Airbus" : type.startsWith("B") ? "Boeing" : "Other",
+        role: /cargo/i.test(type) ? "Cargo" : /vip/i.test(type) ? "VIP" : "PAX"
       };
     })
     .filter(Boolean);
@@ -305,12 +323,26 @@ export async function fetchDashboardData() {
 
   const routes = parseRoutes(routesHtml);
   const transactions = parseTransactions(transactionsHtml || summaryHtml);
+  const fleet = parseFleet(fleetHtml);
+  const company = parseCompanyProfile(companyHtml);
+  const finance = parseFinancialSummary(financeHtml, summaryHtml);
+  const positive24h = transactions.filter((tx) => tx.amount > 0).reduce((sum, tx) => sum + tx.amount, 0);
+  const negative24h = Math.abs(transactions.filter((tx) => tx.amount < 0).reduce((sum, tx) => sum + tx.amount, 0));
 
   return {
-    company: parseCompanyProfile(companyHtml),
-    finance: parseFinancialSummary(financeHtml, summaryHtml),
+    company: {
+      ...company,
+      fleetCount: fleet.reduce((sum, item) => sum + item.count, 0) || company.fleetCount,
+      routesCount: routes.length || company.routesCount
+    },
+    finance: {
+      ...finance,
+      income: positive24h || finance.income,
+      expenses: negative24h || finance.expenses,
+      netResult: (positive24h || finance.income) - (negative24h || finance.expenses)
+    },
     transactions,
-    fleet: parseFleet(fleetHtml),
+    fleet,
     routes,
     aircraftPerformance: deriveAircraftPerformance(routes, transactions)
   };

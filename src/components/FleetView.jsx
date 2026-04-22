@@ -53,14 +53,20 @@ export default function FleetView({ fleet, aircraftPerformance }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => (
-                <tr key={item.type} className="border-t border-slate-800">
-                  <td className="py-2 font-medium">{item.type}</td>
-                  <td>{item.count}</td>
-                  <td>{item.manufacturer}</td>
-                  <td>{item.role}</td>
+              {filtered.length === 0 ? (
+                <tr className="border-t border-slate-800">
+                  <td colSpan={4} className="py-3 text-slate-400">No fleet data available.</td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((item) => (
+                  <tr key={item.type} className="border-t border-slate-800">
+                    <td className="py-2 font-medium">{item.type}</td>
+                    <td>{item.count}</td>
+                    <td>{item.manufacturer}</td>
+                    <td>{item.role}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           )}
