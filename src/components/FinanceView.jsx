@@ -94,6 +94,7 @@ export default function FinanceView({ finance, transactions }) {
 
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
             {filteredTransactions.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-400">No transactions found for this filter yet.</p>
               <p className="rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-sm text-slate-400">
                 No transactions found for this filter yet.
               </p>

@@ -13,6 +13,9 @@ export default function RoutesView({ routes, aircraftPerformance }) {
     <section className="space-y-4">
       <div className="card p-4">
         <h3 className="mb-4 text-lg font-semibold">Active Routes with Time Remaining</h3>
+        {routes.length === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-400">No route data available.</p>
+        ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="text-left text-slate-400">
@@ -50,6 +53,7 @@ export default function RoutesView({ routes, aircraftPerformance }) {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -80,6 +84,7 @@ export default function RoutesView({ routes, aircraftPerformance }) {
             <li className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
               <span className="text-slate-400">Average route completion:</span>{" "}
               <span className="font-semibold text-emerald-300">
+                {routes.length > 0 ? Math.round(routes.reduce((sum, route) => sum + route.progress, 0) / routes.length) : 0}%
                 {avgRouteCompletion}%
               </span>
             </li>
